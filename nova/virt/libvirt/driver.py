@@ -4271,10 +4271,10 @@ class LibvirtDriver(driver.ComputeDriver):
         # if block migration, instances_paths should not be on shared storage.
         source = CONF.host
 
-        dest_check_data.update({'is_shared_block_storage':
-                self._is_shared_block_storage(instance, dest_check_data)})
         dest_check_data.update({'is_shared_instance_path':
                 self._is_shared_instance_path(dest_check_data)})
+        dest_check_data.update({'is_shared_block_storage':
+                self._is_shared_block_storage(instance, dest_check_data)})
 
         if dest_check_data['block_migration']:
             if (dest_check_data['is_shared_block_storage'] or
@@ -4311,6 +4311,12 @@ class LibvirtDriver(driver.ComputeDriver):
         '''
         if (CONF.libvirt.images_type == dest_check_data.get('image_type') and
                 self.image_backend.backend().is_shared_block_storage()):
+            return True
+
+        if (dest_check_data.get('is_shared_instance_path') and
+                self.image_backend.backend().is_file_in_instance_path()):
+            # NOTE(angdraug): file based image backends (Raw, Qcow2)
+            # place block device files under the instance path
             return True
 
         if (dest_check_data.get('is_volume_backed') and
